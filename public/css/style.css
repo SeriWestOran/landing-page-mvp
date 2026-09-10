@@ -25,3 +25,31 @@
 .gallery-thumb:hover {
   border-color: #0066cc;
 }
+/* Style de la galerie produit */
+.product-media {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.product-gallery {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gallery-thumb {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gallery-thumb.active,
+.gallery-thumb:hover {
+  border-color: #0066cc;
+  transform: scale(1.05);
+}
