@@ -16,11 +16,9 @@ const authRouter = require("./routes/auth");
 const db = require("./db");
 const { loadSiteConfig } = require("./site-config");
 
-// Vérifie tôt que les secrets essentiels sont bien définis : mieux vaut
-// planter au démarrage qu'accepter des requêtes avec une config cassée.
 ["JWT_SECRET", "ADMIN_PASSWORD_HASH"].forEach((key) => {
   if (!process.env[key]) {
-    console.warn(`⚠️  Variable d'environnement manquante : ${key} (voir .env.example)`);
+    console.warn(`⚠️ Variable d'environnement manquante : ${key} (voir .env.example)`);
   }
 });
 
@@ -40,7 +38,6 @@ app.use(morgan("tiny"));
 app.use(express.json({ limit: "200kb" }));
 app.use(cookieParser());
 
-// Limite générale anti-abus sur toute l'API.
 app.use(
   "/api",
   rateLimit({
@@ -55,7 +52,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/services", servicesRouter);
 
-// Échappe une valeur avant de l'insérer dans un attribut HTML (title, meta content...).
 function escapeAttr(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -67,11 +63,28 @@ function escapeAttr(value) {
 const PRODUCT_TEMPLATE_PATH = path.join(__dirname, "templates", "product.html");
 const SERVICE_TEMPLATE_PATH = path.join(__dirname, "templates", "service.html");
 
-// Page produit partageable (ex: sur un post Facebook). Le HTML est généré
-// avec les vraies balises Open Graph (titre, image, prix) AVANT d'être
-// envoyé, car les robots qui génèrent les aperçus de liens (Facebook,
-// WhatsApp...) n'exécutent pas le JavaScript : sans ça, ils ne verraient
-// qu'un titre générique et aucune image.
+// Fonction utilitaire pour garantir qu'une URL d'image renvoie une vraie image valide
+function resolveValidImageUrl(rawUrl, fallback, origin) {
+  if (!rawUrl) {
+    return new URL(fallback, origin).toString();
+  }
+
+  // Si c'est une URL absolue (Cloudinary, Imgur, etc.)
+  if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+    return rawUrl;
+  }
+
+  // Si c'est un chemin relatif (/images/uploads/...)
+  const localFilePath = path.join(__dirname, "..", "public", rawUrl);
+  
+  // Si le fichier n'existe pas localement sur le disque de Render
+  if (!fs.existsSync(localFilePath)) {
+    return new URL(fallback, origin).toString();
+  }
+
+  return new URL(rawUrl, origin).toString();
+}
+
 app.get("/produit/:id", async (req, res) => {
   let product = null;
   try {
@@ -93,11 +106,8 @@ app.get("/produit/:id", async (req, res) => {
     description = product.description
       ? product.description.slice(0, 200)
       : `${product.name} — ${product.price} ${product.currency}`;
-    try {
-      imageUrl = new URL(product.image_url || fallbackImage, origin).toString();
-    } catch {
-      imageUrl = new URL(fallbackImage, origin).toString();
-    }
+    
+    imageUrl = resolveValidImageUrl(product.image_url, fallbackImage, origin);
   } else {
     title = `Produit introuvable — ${storeName}`;
     description = "Ce produit n'existe plus ou le lien est incorrect.";
@@ -125,7 +135,6 @@ app.get("/produit/:id", async (req, res) => {
   });
 });
 
-// Fiche service partageable — même principe que /produit/:id.
 app.get("/service/:id", async (req, res) => {
   let service = null;
   try {
@@ -147,11 +156,8 @@ app.get("/service/:id", async (req, res) => {
     description = service.description
       ? service.description.slice(0, 200)
       : service.price_text || `Service proposé par ${storeName}`;
-    try {
-      imageUrl = new URL(service.image_url || fallbackImage, origin).toString();
-    } catch {
-      imageUrl = new URL(fallbackImage, origin).toString();
-    }
+
+    imageUrl = resolveValidImageUrl(service.image_url, fallbackImage, origin);
   } else {
     title = `Service introuvable — ${storeName}`;
     description = "Ce service n'existe plus ou le lien est incorrect.";
@@ -179,14 +185,12 @@ app.get("/service/:id", async (req, res) => {
   });
 });
 
-// Fichiers statiques (landing page, admin, images)
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "admin.html"));
 });
 
-// 404 JSON pour les routes /api inconnues
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Endpoint introuvable." });
 });
