@@ -8,23 +8,24 @@ const authRoutes = require("./routes/auth");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Parsers pour intercepter le JSON du login
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 1. SERVIR LES FICHIERS STATIQUES (CSS, JS, IMAGES) EN PREMIER
+// Serveur de fichiers statiques (CSS, JS, Images)
 app.use(express.static(path.join(__dirname, "../public")));
 app.use("/images/uploads", express.static(path.join(__dirname, "../public/images/uploads")));
 
-// 2. ROUTES D'API
+// Routes d'API
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 
-// 3. ROUTE EXPLICITE POUR LA PAGE ADMIN
+// Page Admin
 app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/admin.html"));
 });
 
-// 4. ROUTE DYNAMIQUE POUR LES FICHIERS PRODUITS (Facebook / OpenGraph)
+// Page Produit Dynamique
 app.get("/produit/:id", async (req, res) => {
   try {
     const product = await db.prepare("SELECT * FROM products WHERE id = ? AND is_active = 1").get(req.params.id);
@@ -32,14 +33,7 @@ app.get("/produit/:id", async (req, res) => {
     let html = fs.readFileSync(path.join(__dirname, "templates/product.html"), "utf8");
 
     if (!product) {
-      html = html
-        .replace(/{{PAGE_TITLE}}/g, "Produit introuvable - BarakaShop")
-        .replace(/{{OG_TITLE}}/g, "Produit introuvable")
-        .replace(/{{OG_DESCRIPTION}}/g, "Ce produit n'est plus disponible.")
-        .replace(/{{OG_IMAGE}}/g, "https://barakashopaadl.onrender.com/images/default.jpg")
-        .replace(/{{OG_URL}}/g, `https://barakashopaadl.onrender.com/produit/${req.params.id}`)
-        .replace(/{{SITE_NAME}}/g, "BarakaShop");
-      return res.status(404).send(html);
+      return res.status(404).send("Produit non trouvé");
     }
 
     const host = req.get("host");
@@ -52,23 +46,22 @@ app.get("/produit/:id", async (req, res) => {
     html = html
       .replace(/{{PAGE_TITLE}}/g, `${product.name} - BarakaShop`)
       .replace(/{{OG_TITLE}}/g, product.name)
-      .replace(/{{OG_DESCRIPTION}}/g, product.description || `Acheter ${product.name} au meilleur prix.`)
+      .replace(/{{OG_DESCRIPTION}}/g, product.description || `Acheter ${product.name}`)
       .replace(/{{OG_IMAGE}}/g, imageUrl)
       .replace(/{{OG_URL}}/g, `${protocol}://${host}/produit/${product.id}`)
       .replace(/{{SITE_NAME}}/g, "BarakaShop");
 
     res.send(html);
   } catch (err) {
-    console.error("Erreur serveur sur /produit/:id :", err);
     res.status(500).send("Erreur serveur.");
   }
 });
 
-// 5. PAGE D'ACCUEIL (Remplaçant du app.get("*") pour ne pas bloquer les autres fichiers)
+// Route par défaut (Accueil)
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
 app.listen(PORT, () => {
-  console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`Serveur prêt sur le port ${PORT}`);
 });
