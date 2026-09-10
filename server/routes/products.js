@@ -153,16 +153,38 @@ router.put("/:id", requireAuth, async (req, res) => {
     if (errors.length) return res.status(400).json({ errors });
 
     const merged = { ...existing, ...clean };
+
     await db
       .prepare(`
         UPDATE products SET
-          name = @name, description = @description, price = @price, currency = @currency,
-          image_url = @image_url, category = @category, facebook_url = @facebook_url,
-          is_active = @is_active, in_stock = @in_stock, listing_type = @listing_type,
-          sort_order = @sort_order, updated_at = datetime('now')
+          name = @name, 
+          description = @description, 
+          price = @price, 
+          currency = @currency,
+          image_url = @image_url, 
+          category = @category, 
+          facebook_url = @facebook_url,
+          is_active = @is_active, 
+          in_stock = @in_stock, 
+          listing_type = @listing_type,
+          sort_order = @sort_order, 
+          updated_at = datetime('now')
         WHERE id = @id
       `)
-      .run({ ...merged, id: req.params.id });
+      .run({
+        id: req.params.id,
+        name: merged.name,
+        description: merged.description ?? "",
+        price: merged.price,
+        currency: merged.currency ?? "DZD",
+        image_url: merged.image_url ?? "",
+        category: merged.category ?? "",
+        facebook_url: merged.facebook_url ?? "",
+        is_active: merged.is_active ?? 1,
+        in_stock: merged.in_stock ?? 1,
+        listing_type: merged.listing_type ?? "stock",
+        sort_order: merged.sort_order ?? 0,
+      });
 
     const updated = await db.prepare("SELECT * FROM products WHERE id = ?").get(req.params.id);
     res.json(await attachImages(updated));
@@ -173,7 +195,6 @@ router.put("/:id", requireAuth, async (req, res) => {
 });
 
 // DELETE /api/products/:id — protégé, suppression définitive
-// (les photos de galerie liées sont supprimées automatiquement par ON DELETE CASCADE)
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const info = await db.prepare("DELETE FROM products WHERE id = ?").run(req.params.id);
