@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panneau d'administration - SériWest</title>
+  <style>
+    :root {
+      --primary: #0056b3;
+      --primary-hover: #004085;
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #dddddd;
+      --danger: #dc3545;
+      --success: #28a745;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    h1, h2, h3 {
+      color: #111;
+      margin-bottom: 15px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 25px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="password"],
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-group input {
+      width: auto;
+    }
+
+    button, .btn {
+      background-color: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-danger, .btn-delete {
+      background-color: var(--danger);
+    }
+
+    .btn-danger:hover, .btn-delete:hover {
+      background-color: #bd2130;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .msg {
+      margin-top: 10px;
+      font-weight: 600;
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    .msg.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .msg.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .admin-card-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+    }
+
+    .admin-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .admin-card-img img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .admin-card-info h3 {
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .admin-card-info p {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .admin-card-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .admin-card-actions button {
+      flex: 1;
+      padding: 6px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Panneau d'administration</h1>
+      <button id="logout-btn" class="btn-danger hidden">Déconnexion</button>
+    </header>
+
+    <!-- CONNEXION -->
+    <section id="login-section" class="card">
+      <h2>Connexion requise</h2>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">Nom d'utilisateur</label>
+          <input type="text" id="username" required placeholder="Nom d'utilisateur" />
+        </div>
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" required placeholder="Mot de passe" />
+        </div>
+        <button type="submit">Se connecter</button>
+        <div id="login-msg" class="msg"></div>
+      </form>
+    </section>
+
+    <!-- ADMIN CONTENT -->
+    <div id="admin-content" class="hidden">
+
+      <!-- PRODUITS -->
+      <section class="card">
+        <h2 id="form-title">Ajouter un produit</h2>
+        <form id="product-form">
+          <input type="hidden" id="product-id" />
+          <input type="hidden" id="image_url" />
+          <input type="hidden" id="gallery_urls" />
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">Nom du produit *</label>
+              <input type="text" id="name" required placeholder="Ex: T-shirt personnalisé DTF" />
+            </div>
+            <div class="form-group">
+              <label for="category">Catégorie</label>
+              <input type="text" id="category" placeholder="Ex: Vêtements, Imprimerie..." />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" rows="3" placeholder="Description du produit..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="price">Prix</label>
+              <input type="number" id="price" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="form-group">
+              <label for="currency">Devise</label>
+              <input type="text" id="currency" value="DZD" />
+            </div>
+            <div class="form-group">
+              <label for="listing_type">Type d'affichage</label>
+              <select id="listing_type">
+                <option value="stock">Stock</option>
+                <option value="custom">Sur mesure</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="facebook_url">Lien Facebook / Publication</label>
+            <input type="text" id="facebook_url" placeholder="https://facebook.com/..." />
+          </div>
+
+          <div class="form-group">
+            <label for="image">Image principale du produit</label>
+            <input type="file" id="image" accept="image/*" />
+          </div>
+
+          <!-- NOUVEAU : GALERIE D'IMAGES SUPPLEMENTAIRES -->
+          <div class="form-group">
+            <label for="gallery">Images supplémentaires (Galerie / Fiche détaillée)</label>
+            <input type="file" id="gallery" accept="image/*" multiple />
+            <small style="color: #666;">Vous pouvez sélectionner plusieurs images en même temps.</small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="is_active" checked />
+              <label for="is_active">Actif (Visible sur le site)</label>
+            </div>
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="in_stock" checked />
+              <label for="in_stock">En stock</label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn">Enregistrer le produit</button>
+          <button type="button" id="cancel-edit-btn" class="btn-secondary hidden">Annuler la modification</button>
+          <div id="form-msg" class="msg"></div>
+        </form>
+      </section>
+
+      <!-- LISTE DES PRODUITS -->
+      <section class="card">
+        <h2>Produits existants</h2>
+        <div id="products-list" class="admin-card-list">
+          <p>Chargement des produits...</p>
+        </div>
+      </section>
+
+      <!-- SERVICES -->
+      <section class="card">
+        <h2 id="service-form-title">Ajouter un service</h2>
+        <form id="service-form">
+          <input type="hidden" id="service-id" />
+          <input type="hidden" id="service_image_url" />
+
+          <div class="form-group">
+            <label for="service_name">Nom du service *</label>
+            <input type="text" id="service_name" required placeholder="Ex: Impression DTF grand format" />
+          </div>
+
+          <div class="form-group">
+            <label for="service_description">Description du service</label>
+            <textarea id="service_description" rows="3" placeholder="Détails de la prestation..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="service_price_text">Affichage du prix</label>
+            <input type="text" id="service_price_text" placeholder="Ex: Sur devis / À partir de 1000 DZD" />
+          </div>
+
+          <div class="form-group">
+            <label for="service_image">Image du service</label>
+            <input type="file" id="service_image" accept="image/*" />
+          </div>
+
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="service_is_active" checked />
+            <label for="service_is_active">Actif (Visible sur le site)</label>
+          </div>
+
+          <button type="submit" class="btn">Enregistrer le service</button>
+          <button type="button" id="cancel-service-edit-btn" class="btn-secondary hidden">Annuler la modification</button>
+          <div id="service-form-msg" class="msg"></div>
+        </form>
+      </section>
+
+      <!-- LISTE DES SERVICES -->
+      <section class="card">
+        <h2>Services existants</h2>
+        <div id="services-list" class="admin-card-list">
+          <p>Chargement des services...</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

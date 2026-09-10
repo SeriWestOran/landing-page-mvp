@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ma Boutique — Catalogue</title>
+<meta name="description" content="Découvrez notre sélection de produits, disponibles via notre page Facebook." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="brand" id="brand-name">Ma Boutique</div>
+    <div class="header-actions">
+      <a id="fb-header-link" href="#" target="_blank" rel="noopener">Suivre sur Facebook</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1 id="hero-title">Des produits choisis, prêts à commander</h1>
+      <p class="lede" id="hero-subtitle">
+        Découvrez la sélection du moment. Chaque produit est disponible directement via notre page Facebook.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#catalogue">Voir les produits</a>
+        <a class="btn btn-secondary" id="fb-hero-link" href="#" target="_blank" rel="noopener">Notre page Facebook</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <img id="hero-image" src="/images/placeholder-1.svg" alt="Produit en avant" />
+    </div>
+  </div>
+</section>
+
+<main class="wrap" id="catalogue">
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button class="tab active" data-tab="catalogue">Nos produits</button>
+    <button class="tab" data-tab="sur-commande">Produits sur commande</button>
+    <button class="tab" data-tab="services">Nos services</button>
+  </nav>
+
+  <section class="tab-panel active" id="panel-catalogue">
+    <h2 class="catalog-heading">Le catalogue</h2>
+    <p class="catalog-sub">Cliquez sur un produit pour voir sa fiche ou le commander sur WhatsApp.</p>
+
+    <nav class="filters" id="filters" aria-label="Filtrer par catégorie">
+      <button class="active" data-category="">Tout</button>
+    </nav>
+
+    <div class="grid" id="product-grid" aria-live="polite">
+      <!-- Les produits en stock sont injectés ici par main.js -->
+    </div>
+  </section>
+
+  <section class="tab-panel" id="panel-sur-commande">
+    <h2 class="catalog-heading">Produits sur commande</h2>
+    <p class="catalog-sub">Ces produits ne sont pas en stock immédiat, mais peuvent être ramenés sur demande.</p>
+
+    <div class="grid" id="on-order-grid" aria-live="polite">
+      <!-- Les produits sur commande sont injectés ici par main.js -->
+    </div>
+  </section>
+
+  <section class="tab-panel" id="panel-services">
+    <h2 class="catalog-heading">Nos services</h2>
+    <p class="catalog-sub">Photocopies, impressions, paiement de factures et plus — contactez-nous sur WhatsApp.</p>
+
+    <div class="grid" id="services-grid" aria-live="polite">
+      <!-- Les services sont injectés ici par main.js -->
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span id="footer-contact">Une question ? Écrivez-nous sur Facebook.</span>
+    <a id="fb-footer-link" href="#" target="_blank" rel="noopener">facebook.com/votre-page</a>
+  </div>
+</footer>
+
+<a id="whatsapp-float" class="whatsapp-float" href="#" target="_blank" rel="noopener" aria-label="Discuter sur WhatsApp">
+  <svg viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16.02 3C9.4 3 4.02 8.38 4.02 15c0 2.25.62 4.35 1.7 6.16L4 29l8.02-2.62A11.9 11.9 0 0 0 16.02 27C22.64 27 28.02 21.62 28.02 15S22.64 3 16.02 3zm0 21.5c-1.95 0-3.76-.57-5.28-1.55l-.38-.24-4.76 1.56 1.55-4.64-.25-.4A9.44 9.44 0 0 1 5.52 15c0-5.24 4.26-9.5 9.5-9.5s9.5 4.26 9.5 9.5-4.26 9.5-9.5 9.5zm5.2-7.12c-.28-.14-1.66-.82-1.92-.91-.26-.1-.45-.14-.63.14-.19.28-.72.91-.88 1.1-.16.19-.32.21-.6.07-.28-.14-1.18-.44-2.24-1.4-.83-.74-1.39-1.66-1.55-1.94-.16-.28-.02-.43.12-.57.13-.13.28-.33.42-.5.14-.16.19-.28.28-.47.09-.19.05-.35-.02-.5-.07-.14-.63-1.53-.87-2.09-.23-.55-.46-.48-.63-.49-.16-.01-.35-.01-.54-.01-.19 0-.5.07-.76.35-.26.28-1 1-1 2.42 0 1.43 1.03 2.81 1.17 3 .14.19 2.03 3.1 4.92 4.35.69.3 1.22.48 1.64.61.69.22 1.32.19 1.81.11.55-.08 1.66-.68 1.9-1.34.23-.65.23-1.21.16-1.33-.07-.12-.26-.19-.54-.33z"/>
+  </svg>
+</a>
+
+<script src="/js/config.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
