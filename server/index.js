@@ -1,6 +1,7 @@
 // server/index.js
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 const db = require("./db");
 const productRoutes = require("./routes/products");
 const authRoutes = require("./routes/auth");
@@ -29,8 +30,15 @@ app.get("/admin", (req, res) => {
 app.get("/produit/:id", async (req, res) => {
   try {
     const product = await db.prepare("SELECT * FROM products WHERE id = ? AND is_active = 1").get(req.params.id);
-    const fs = require("fs");
-    let html = fs.readFileSync(path.join(__dirname, "templates/product.html"), "utf8");
+    
+    // CORRECTION : Lecture de product.html dans le dossier racine
+    const productHtmlPath = path.join(__dirname, "../product.html");
+    
+    if (!fs.existsSync(productHtmlPath)) {
+      return res.status(404).send("Fichier de template introuvable.");
+    }
+
+    let html = fs.readFileSync(productHtmlPath, "utf8");
 
     if (!product) {
       return res.status(404).send("Produit non trouvé");
@@ -53,6 +61,7 @@ app.get("/produit/:id", async (req, res) => {
 
     res.send(html);
   } catch (err) {
+    console.error("Erreur serveur route produit :", err);
     res.status(500).send("Erreur serveur.");
   }
 });
