@@ -16,35 +16,36 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Route dynamique pour les pages produits (injection HTML pour Facebook / Open Graph)
+
 app.get('/produit/:id', async (req, res) => {
-  const productId = req.params.id;
+  const rawId = req.params.id;
   const produitHtmlPath = path.join(__dirname, '../public/produit.html');
 
   try {
-    // 1. Récupérer les détails du produit depuis Turso
-    const result = await tursoClient.execute({
-      sql: 'SELECT * FROM products WHERE id = ?',
-      args: [productId],
+    // Essayer la recherche avec l'ID tel quel, puis converti en nombre si nécessaire
+    let result = await tursoClient.execute({
+      sql: 'SELECT * FROM products WHERE id = ? OR id = ?',
+      args: [rawId, Number(rawId) || 0],
     });
 
-    const product = result.rows[0];
+    let product = result.rows[0];
 
-    // 2. Si le fichier HTML n'existe pas à cet endroit, tenter la racine du dossier public
+    // Vérifier si le fichier HTML existe
     if (!fs.existsSync(produitHtmlPath)) {
-      return res.sendFile(path.join(__dirname, '../public/index.html'));
+      return res.status(404).send('Page non trouvée');
     }
 
     let html = fs.readFileSync(produitHtmlPath, 'utf8');
 
     if (product) {
       const name = String(product.name || 'Produit');
-      const desc = String(product.description || 'Découvrez nos articles disponibles en magasin.');
+      const desc = String(product.description || 'Découvrez nos articles chez Baraka Shop.');
       const imageUrl = String(
         product.image_url || 'https://barakashopaadl.onrender.com/images/placeholder-1.svg'
       );
-      const fullUrl = `https://barakashopaadl.onrender.com/produit/${productId}`;
+      const fullUrl = `https://barakashopaadl.onrender.com/produit/${rawId}`;
 
-      // Injection dynamique des métadonnées dans le fichier HTML
+      // Injection dynamique des métadonnées pour Facebook
       html = html
         .replace(/<title>.*?<\/title>/i, `<title>${name} — Baraka Shop</title>`)
         .replace(/<meta property="og:title" content=".*?" \/>/i, `<meta property="og:title" content="${name} — Baraka Shop" />`)
@@ -55,12 +56,8 @@ app.get('/produit/:id', async (req, res) => {
 
     res.send(html);
   } catch (err) {
-    console.error('Erreur lors de la préparation des balises Open Graph:', err);
-    if (fs.existsSync(produitHtmlPath)) {
-      res.sendFile(produitHtmlPath);
-    } else {
-      res.status(500).send('Erreur serveur');
-    }
+    console.error('Erreur lors du traitement Open Graph:', err);
+    res.sendFile(produitHtmlPath);
   }
 });
 
