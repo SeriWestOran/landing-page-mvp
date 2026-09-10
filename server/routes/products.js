@@ -1,6 +1,6 @@
 // server/routes/products.js
 const express = require("express");
-const { db } = require("../db");
+const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { createImageUpload } = require("../lib/upload");
 
@@ -9,6 +9,7 @@ const upload = createImageUpload();
 
 const ALLOWED_LISTING_TYPES = new Set(["stock", "on_order"]);
 
+// --- Validation minimale, sans dépendance externe.
 function validateProduct(body, { partial = false } = {}) {
   const errors = [];
   const clean = {};
@@ -46,16 +47,21 @@ function validateProduct(body, { partial = false } = {}) {
   return { errors, clean };
 }
 
+// Charge la galerie de photos d'un produit et l'attache sous product.images.
 async function attachImages(product) {
   if (!product) return product;
-  const res = await db.execute({
-    sql: "SELECT id, image_url, sort_order FROM product_images WHERE product_id = ? ORDER BY sort_order, id",
-    args: [product.id],
-  });
-  return { ...product, images: res.rows };
+  const images = await db
+    .prepare("SELECT id, image_url, sort_order FROM product_images WHERE product_id = ? ORDER BY sort_order, id")
+    .all(product.id);
+  return { ...product, images };
 }
 
-// GET /api/products
+async function attachImagesToAll(products) {
+  return Promise.all(products.map(attachImages));
+}
+
+// GET /api/products — public, uniquement les produits actifs
+// Filtres optionnels : ?category=... et ?type=stock|on_order
 router.get("/", async (req, res) => {
   try {
     const { category, type } = req.query;
@@ -71,212 +77,165 @@ router.get("/", async (req, res) => {
       params.push(type);
     }
 
-    const result = await db.execute({
-      sql: `SELECT * FROM products WHERE ${conditions.join(" AND ")} ORDER BY sort_order, created_at DESC`,
-      args: params,
-    });
-    res.json(result.rows);
+    const rows = await db
+      .prepare(`SELECT * FROM products WHERE ${conditions.join(" AND ")} ORDER BY sort_order, created_at DESC`)
+      .all(...params);
+    res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erreur serveur lors de la récupération des produits." });
+    res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
-// GET /api/products/admin/all
+// GET /api/products/admin/all — protégé, tous les produits (actifs + inactifs)
 router.get("/admin/all", requireAuth, async (req, res) => {
   try {
-    const result = await db.execute("SELECT * FROM products ORDER BY sort_order, created_at DESC");
-    const productsWithImages = await Promise.all(result.rows.map(attachImages));
-    res.json(productsWithImages);
+    const rows = await db.prepare("SELECT * FROM products ORDER BY sort_order, created_at DESC").all();
+    res.json(await attachImagesToAll(rows));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
-// GET /api/products/:id
+// GET /api/products/:id — public, avec la galerie de photos
 router.get("/:id", async (req, res) => {
   try {
-    const result = await db.execute({
-      sql: "SELECT * FROM products WHERE id = ? AND is_active = 1",
-      args: [req.params.id],
-    });
-    const row = result.rows[0];
+    const row = await db.prepare("SELECT * FROM products WHERE id = ? AND is_active = 1").get(req.params.id);
     if (!row) return res.status(404).json({ error: "Produit introuvable." });
-
-    const withImages = await attachImages(row);
-    res.json(withImages);
+    res.json(await attachImages(row));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
-// POST /api/products
+// POST /api/products — protégé, création
 router.post("/", requireAuth, async (req, res) => {
   try {
     const { errors, clean } = validateProduct(req.body);
     if (errors.length) return res.status(400).json({ errors });
 
-    const result = await db.execute({
-      sql: `
+    const info = await db
+      .prepare(`
         INSERT INTO products (name, description, price, currency, image_url, category, facebook_url, is_active, in_stock, listing_type, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      args: [
-        clean.name,
-        clean.description ?? "",
-        clean.price,
-        clean.currency ?? "DZD",
-        clean.image_url ?? "",
-        clean.category ?? "",
-        clean.facebook_url ?? "",
-        clean.is_active ?? 1,
-        clean.in_stock ?? 1,
-        clean.listing_type ?? "stock",
-        clean.sort_order ?? 0,
-      ],
-    });
+        VALUES (@name, @description, @price, @currency, @image_url, @category, @facebook_url, @is_active, @in_stock, @listing_type, @sort_order)
+      `)
+      .run({
+        name: clean.name,
+        description: clean.description ?? "",
+        price: clean.price,
+        currency: clean.currency ?? "DZD",
+        image_url: clean.image_url ?? "",
+        category: clean.category ?? "",
+        facebook_url: clean.facebook_url ?? "",
+        is_active: clean.is_active ?? 1,
+        in_stock: clean.in_stock ?? 1,
+        listing_type: clean.listing_type ?? "stock",
+        sort_order: clean.sort_order ?? 0,
+      });
 
-    const newId = Number(result.lastInsertRowid);
-    const createdResult = await db.execute({
-      sql: "SELECT * FROM products WHERE id = ?",
-      args: [newId],
-    });
-
-    const withImages = await attachImages(createdResult.rows[0]);
-    res.status(201).json(withImages);
+    const created = await db.prepare("SELECT * FROM products WHERE id = ?").get(info.lastInsertRowid);
+    res.status(201).json(await attachImages(created));
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erreur serveur lors de la création du produit." });
+    res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
-// PUT /api/products/:id
+// PUT /api/products/:id — protégé, mise à jour partielle
 router.put("/:id", requireAuth, async (req, res) => {
   try {
-    const existingResult = await db.execute({
-      sql: "SELECT * FROM products WHERE id = ?",
-      args: [req.params.id],
-    });
-    const existing = existingResult.rows[0];
+    const existing = await db.prepare("SELECT * FROM products WHERE id = ?").get(req.params.id);
     if (!existing) return res.status(404).json({ error: "Produit introuvable." });
 
     const { errors, clean } = validateProduct(req.body, { partial: true });
     if (errors.length) return res.status(400).json({ errors });
 
     const merged = { ...existing, ...clean };
-
-    await db.execute({
-      sql: `
+    await db
+      .prepare(`
         UPDATE products SET
-          name = ?, description = ?, price = ?, currency = ?,
-          image_url = ?, category = ?, facebook_url = ?,
-          is_active = ?, in_stock = ?, listing_type = ?,
-          sort_order = ?, updated_at = datetime('now')
-        WHERE id = ?
-      `,
-      args: [
-        merged.name,
-        merged.description,
-        merged.price,
-        merged.currency,
-        merged.image_url,
-        merged.category,
-        merged.facebook_url,
-        merged.is_active,
-        merged.in_stock,
-        merged.listing_type,
-        merged.sort_order,
-        req.params.id,
-      ],
-    });
+          name = @name, description = @description, price = @price, currency = @currency,
+          image_url = @image_url, category = @category, facebook_url = @facebook_url,
+          is_active = @is_active, in_stock = @in_stock, listing_type = @listing_type,
+          sort_order = @sort_order, updated_at = datetime('now')
+        WHERE id = @id
+      `)
+      .run({ ...merged, id: req.params.id });
 
-    const updatedResult = await db.execute({
-      sql: "SELECT * FROM products WHERE id = ?",
-      args: [req.params.id],
-    });
-
-    const withImages = await attachImages(updatedResult.rows[0]);
-    res.json(withImages);
+    const updated = await db.prepare("SELECT * FROM products WHERE id = ?").get(req.params.id);
+    res.json(await attachImages(updated));
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erreur serveur lors de la mise à jour." });
+    res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
-// DELETE /api/products/:id
+// DELETE /api/products/:id — protégé, suppression définitive
+// (les photos de galerie liées sont supprimées automatiquement par ON DELETE CASCADE)
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const result = await db.execute({
-      sql: "DELETE FROM products WHERE id = ?",
-      args: [req.params.id],
-    });
-
-    if (result.rowsAffected === 0) return res.status(404).json({ error: "Produit introuvable." });
+    const info = await db.prepare("DELETE FROM products WHERE id = ?").run(req.params.id);
+    if (info.changes === 0) return res.status(404).json({ error: "Produit introuvable." });
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Erreur serveur lors de la suppression." });
+    res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
-// POST /api/products/upload
+// POST /api/products/upload — protégé, upload de l'image principale d'un produit
 router.post("/upload", requireAuth, (req, res) => {
   upload.single("image")(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: "Aucun fichier reçu." });
-    res.json({ url: req.file.path });
+    res.json({ url: req.file.path || `/images/uploads/${req.file.filename}` });
   });
 });
 
-// POST /api/products/:id/images
+// --- Galerie de photos supplémentaires d'un produit ---
+
+// POST /api/products/:id/images — protégé, ajoute une photo à la galerie
 router.post("/:id/images", requireAuth, async (req, res) => {
   try {
-    const productRes = await db.execute({
-      sql: "SELECT id FROM products WHERE id = ?",
-      args: [req.params.id],
-    });
-    const product = productRes.rows[0];
+    const product = await db.prepare("SELECT id FROM products WHERE id = ?").get(req.params.id);
     if (!product) return res.status(404).json({ error: "Produit introuvable." });
 
     upload.single("image")(req, res, async (err) => {
-      if (err) return res.status(400).json({ error: err.message });
-      if (!req.file) return res.status(400).json({ error: "Aucun fichier reçu." });
+      try {
+        if (err) return res.status(400).json({ error: err.message });
+        if (!req.file) return res.status(400).json({ error: "Aucun fichier reçu." });
 
-      const imageUrl = req.file.path;
+        const imageUrl = req.file.path || `/images/uploads/${req.file.filename}`;
+        const maxOrderRow = await db
+          .prepare("SELECT COALESCE(MAX(sort_order), -1) AS m FROM product_images WHERE product_id = ?")
+          .get(product.id);
+        const nextOrder = (maxOrderRow?.m ?? -1) + 1;
 
-      const maxRes = await db.execute({
-        sql: "SELECT COALESCE(MAX(sort_order), -1) AS m FROM product_images WHERE product_id = ?",
-        args: [product.id],
-      });
-      const maxOrder = Number(maxRes.rows[0].m);
+        const info = await db
+          .prepare("INSERT INTO product_images (product_id, image_url, sort_order) VALUES (?, ?, ?)")
+          .run(product.id, imageUrl, nextOrder);
 
-      const insertRes = await db.execute({
-        sql: "INSERT INTO product_images (product_id, image_url, sort_order) VALUES (?, ?, ?)",
-        args: [product.id, imageUrl, maxOrder + 1],
-      });
-
-      res.status(201).json({
-        id: Number(insertRes.lastInsertRowid),
-        image_url: imageUrl,
-        sort_order: maxOrder + 1,
-      });
+        res.status(201).json({ id: info.lastInsertRowid, image_url: imageUrl, sort_order: nextOrder });
+      } catch (innerErr) {
+        console.error(innerErr);
+        res.status(500).json({ error: "Erreur serveur." });
+      }
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur serveur." });
   }
 });
-// DELETE /api/products/:id/images/:imageId
+
+// DELETE /api/products/:id/images/:imageId — protégé, retire une photo de la galerie
 router.delete("/:id/images/:imageId", requireAuth, async (req, res) => {
   try {
-    const result = await db.execute({
-      sql: "DELETE FROM product_images WHERE id = ? AND product_id = ?",
-      args: [req.params.imageId, req.params.id],
-    });
-
-    if (result.rowsAffected === 0) return res.status(404).json({ error: "Photo introuvable." });
+    const info = await db
+      .prepare("DELETE FROM product_images WHERE id = ? AND product_id = ?")
+      .run(req.params.imageId, req.params.id);
+    if (info.changes === 0) return res.status(404).json({ error: "Photo introuvable." });
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
