@@ -1,95 +1,45 @@
 <!DOCTYPE html>
 <html lang="fr">
-<!-- Balises Open Graph pour Facebook -->
-<meta property="og:type" content="product" />
-<meta property="og:title" id="og-title" content="Produit - Baraka Shop 2700" />
-<meta property="og:description" id="og-desc" content="Découvrez nos articles disponibles en magasin." />
-<meta property="og:image" id="og-image" content="https://barakashopaadl.onrender.com/images/placeholder-1.svg" />
-<meta property="og:url" content="https://barakashopaadl.onrender.com" />
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Produit — Ma Boutique</title>
-<meta name="description" content="Détails du produit : prix, description et lien de commande." />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css" />
-<style>
-  .product-page { padding: 56px 0 96px; }
-  .breadcrumb { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; display: inline-block; text-decoration: none; }
-  .breadcrumb:hover { color: var(--accent); }
-  .product-detail {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px;
-    align-items: start;
-  }
-  .product-detail .image {
-    aspect-ratio: 1 / 1;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .product-detail .image img { width: 100%; height: 100%; object-fit: cover; }
-  .product-detail .category-tag {
-    display: inline-block;
-    font-size: 0.82rem;
-    color: var(--muted);
-    border: 1px solid var(--line);
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-bottom: 16px;
-  }
-  .product-detail h1 {
-    font-family: var(--font-display);
-    font-size: 2.2rem;
-    margin: 0 0 14px;
-    line-height: 1.15;
-  }
-  .product-detail .price {
-    font-size: 1.6rem;
-    color: var(--accent);
-    font-weight: 600;
-    margin-bottom: 24px;
-  }
-  .product-detail .desc {
-    color: var(--muted);
-    font-size: 1.02rem;
-    line-height: 1.7;
-    margin-bottom: 32px;
-    white-space: pre-line;
-  }
-  .not-found { padding: 96px 24px; text-align: center; }
-  @media (max-width: 800px) {
-    .product-detail { grid-template-columns: 1fr; }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produit — Baraka Shop</title>
+
+  <!-- Balises Open Graph pour Facebook & réseaux sociaux -->
+  <meta property="og:type" content="product" />
+  <meta property="og:title" content="Produit — Baraka Shop" />
+  <meta property="og:description" content="Découvrez nos articles disponibles en magasin chez Baraka Shop." />
+  <meta property="og:image" content="https://barakashopaadl.onrender.com/images/placeholder-1.svg" />
+  <meta property="og:url" content="https://barakashopaadl.onrender.com" />
+
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-
-<header class="site-header">
-  <div class="wrap">
-    <a class="brand" href="/" id="brand-name" style="text-decoration:none;">Ma Boutique</a>
-    <div class="header-actions">
-      <a id="fb-header-link" href="#" target="_blank" rel="noopener">Suivre sur Facebook</a>
+  <header class="site-header">
+    <div class="container">
+      <a href="/" class="brand" id="brand-name">Baraka Shop</a>
+      <nav>
+        <a id="fb-header-link" href="#" target="_blank" rel="noopener">Facebook</a>
+      </nav>
     </div>
-  </div>
-</header>
+  </header>
 
-<main class="product-page wrap" id="product-container">
-  <p>Chargement du produit…</p>
-</main>
+  <main class="container" id="product-container">
+    <p>Chargement du produit...</p>
+  </main>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <span id="footer-contact">Une question ? Écrivez-nous sur Facebook.</span>
-    <a id="fb-footer-link" href="#" target="_blank" rel="noopener">facebook.com/votre-page</a>
-  </div>
-</footer>
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; Baraka Shop — Tous droits réservés.</p>
+      <a id="fb-footer-link" href="#" target="_blank" rel="noopener">Nous suivre sur Facebook</a>
+    </div>
+  </footer>
 
-<script src="/js/config.js"></script>
-<script src="/js/product.js"></script>
+  <a id="whatsapp-float" href="#" target="_blank" rel="noopener" class="whatsapp-float" title="Contactez-nous sur WhatsApp">
+    💬
+  </a>
+
+  <script src="/js/config.js"></script>
+  <script src="/js/product.js"></script>
 </body>
 </html>
