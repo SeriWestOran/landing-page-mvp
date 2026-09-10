@@ -6,7 +6,6 @@ const { createClient } = require('@libsql/client');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuration de la base de données Turso
 const tursoClient = createClient({
   url: process.env.TURSO_DATABASE_URL || '',
   authToken: process.env.TURSO_AUTH_TOKEN || '',
@@ -15,37 +14,64 @@ const tursoClient = createClient({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Route dynamique pour les pages produits (injection HTML pour Facebook / Open Graph)
-
-app.get('/produit/:id', async (req, res) => {
+// API pour récupérer un produit avec sa galerie d'images
+app.get('/api/products/:id', async (req, res) => {
   const rawId = req.params.id;
-  const produitHtmlPath = path.join(__dirname, '../public/produit.html');
-
   try {
-    // Essayer la recherche avec l'ID tel quel, puis converti en nombre si nécessaire
-    let result = await tursoClient.execute({
+    const prodRes = await tursoClient.execute({
       sql: 'SELECT * FROM products WHERE id = ? OR id = ?',
       args: [rawId, Number(rawId) || 0],
     });
 
-    let product = result.rows[0];
+    if (prodRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Produit non trouvé' });
+    }
 
-    // Vérifier si le fichier HTML existe
+    const product = prodRes.rows[0];
+
+    // Récupérer les images secondaires
+    const imgRes = await tursoClient.execute({
+      sql: 'SELECT image_url FROM product_images WHERE product_id = ? OR product_id = ?',
+      args: [rawId, Number(rawId) || 0],
+    });
+
+    product.images = imgRes.rows;
+    res.json(product);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Route d'affichage de la page Produit + Open Graph pour Facebook
+app.get(['/produit/:id', '/produit'], async (req, res) => {
+  const rawId = req.params.id || req.query.id;
+  const produitHtmlPath = path.join(__dirname, '../public/produit.html');
+
+  try {
+    let product = null;
+    if (rawId) {
+      const result = await tursoClient.execute({
+        sql: 'SELECT * FROM products WHERE id = ? OR id = ?',
+        args: [rawId, Number(rawId) || 0],
+      });
+      product = result.rows[0];
+    }
+
     if (!fs.existsSync(produitHtmlPath)) {
-      return res.status(404).send('Page non trouvée');
+      return res.status(404).send('Fichier produit.html introuvable');
     }
 
     let html = fs.readFileSync(produitHtmlPath, 'utf8');
 
     if (product) {
       const name = String(product.name || 'Produit');
-      const desc = String(product.description || 'Découvrez nos articles chez Baraka Shop.');
+      const desc = String(product.description || 'Découvrez cet article chez Baraka Shop.');
       const imageUrl = String(
         product.image_url || 'https://barakashopaadl.onrender.com/images/placeholder-1.svg'
       );
-      const fullUrl = `https://barakashopaadl.onrender.com/produit/${rawId}`;
+      const fullUrl = `https://barakashopaadl.onrender.com/produit/${product.id}`;
 
-      // Injection dynamique des métadonnées pour Facebook
       html = html
         .replace(/<title>.*?<\/title>/i, `<title>${name} — Baraka Shop</title>`)
         .replace(/<meta property="og:title" content=".*?" \/>/i, `<meta property="og:title" content="${name} — Baraka Shop" />`)
@@ -56,12 +82,11 @@ app.get('/produit/:id', async (req, res) => {
 
     res.send(html);
   } catch (err) {
-    console.error('Erreur lors du traitement Open Graph:', err);
+    console.error('Erreur Open Graph:', err);
     res.sendFile(produitHtmlPath);
   }
 });
 
-// Lancement du serveur
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
 });
