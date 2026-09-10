@@ -1,102 +1,51 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>{{PAGE_TITLE}}</title>
-<meta name="description" content="{{OG_DESCRIPTION}}" />
-<meta property="og:type" content="product" />
-<meta property="og:title" content="{{OG_TITLE}}" />
-<meta property="og:description" content="{{OG_DESCRIPTION}}" />
-<meta property="og:image" content="{{OG_IMAGE}}" />
-<meta property="og:url" content="{{OG_URL}}" />
-<meta property="og:site_name" content="{{SITE_NAME}}" />
-<meta name="twitter:card" content="summary_large_image" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css" />
-<style>
-  .product-page { padding: 56px 0 96px; }
-  .breadcrumb { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; display: inline-block; text-decoration: none; }
-  .breadcrumb:hover { color: var(--accent); }
-  .product-detail {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px;
-    align-items: start;
-  }
-  .product-detail .image {
-    aspect-ratio: 1 / 1;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .product-detail .image img { width: 100%; height: 100%; object-fit: cover; }
-  .product-detail .category-tag {
-    display: inline-block;
-    font-size: 0.82rem;
-    color: var(--muted);
-    border: 1px solid var(--line);
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-bottom: 16px;
-  }
-  .product-detail h1 {
-    font-family: var(--font-display);
-    font-size: 2.2rem;
-    margin: 0 0 14px;
-    line-height: 1.15;
-  }
-  .product-detail .price {
-    font-size: 1.6rem;
-    color: var(--accent);
-    font-weight: 600;
-    margin-bottom: 24px;
-  }
-  .product-detail .desc {
-    color: var(--muted);
-    font-size: 1.02rem;
-    line-height: 1.7;
-    margin-bottom: 32px;
-    white-space: pre-line;
-  }
-  .not-found { padding: 96px 24px; text-align: center; }
-  @media (max-width: 800px) {
-    .product-detail { grid-template-columns: 1fr; }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{PAGE_TITLE}}</title>
+  
+  <!-- Open Graph / Meta Facebook -->
+  <meta property="og:type" content="product" />
+  <meta property="og:site_name" content="{{SITE_NAME}}" />
+  <meta property="og:title" content="{{OG_TITLE}}" />
+  <meta property="og:description" content="{{OG_DESCRIPTION}}" />
+  <meta property="og:image" content="{{OG_IMAGE}}" />
+  <meta property="og:image:secure_url" content="{{OG_IMAGE}}" />
+  <meta property="og:url" content="{{OG_URL}}" />
+
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-<header class="site-header">
-  <div class="wrap">
-    <a class="brand" href="/" id="brand-name" style="text-decoration:none;">Ma Boutique</a>
-    <div class="header-actions">
-      <a id="fb-header-link" href="#" target="_blank" rel="noopener">Suivre sur Facebook</a>
+  <header class="site-header">
+    <h1 class="logo">{{SITE_NAME}}</h1>
+    <a href="https://facebook.com" class="btn-facebook" id="facebook-link">Suivre sur Facebook</a>
+  </header>
+
+  <main class="container">
+    <a href="/" class="back-link">&larr; Retour au catalogue</a>
+
+    <div id="product-container" class="product-detail-layout">
+      <!-- Zone Image Principale & Galerie -->
+      <div class="product-media">
+        <div class="main-image-wrapper">
+          <img id="main-product-image" src="{{OG_IMAGE}}" alt="{{OG_TITLE}}">
+        </div>
+        <!-- Galerie de vignettes pour les photos secondaires -->
+        <div id="product-gallery" class="product-gallery"></div>
+      </div>
+
+      <!-- Zone Informations Produit -->
+      <div class="product-info">
+        <span id="product-category" class="badge"></span>
+        <h1 id="product-title">{{OG_TITLE}}</h1>
+        <div id="product-price" class="price"></div>
+        <p id="product-description" class="description">{{OG_DESCRIPTION}}</p>
+      </div>
     </div>
-  </div>
-</header>
+  </main>
 
-<main class="product-page wrap" id="product-container">
-  <p>Chargement du produit…</p>
-</main>
-
-<footer class="site-footer">
-  <div class="wrap">
-    <span id="footer-contact">Une question ? Écrivez-nous sur Facebook.</span>
-    <a id="fb-footer-link" href="#" target="_blank" rel="noopener">facebook.com/votre-page</a>
-  </div>
-</footer>
-
-<a id="whatsapp-float" class="whatsapp-float" href="#" target="_blank" rel="noopener" aria-label="Discuter sur WhatsApp">
-  <svg viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16.02 3C9.4 3 4.02 8.38 4.02 15c0 2.25.62 4.35 1.7 6.16L4 29l8.02-2.62A11.9 11.9 0 0 0 16.02 27C22.64 27 28.02 21.62 28.02 15S22.64 3 16.02 3zm0 21.5c-1.95 0-3.76-.57-5.28-1.55l-.38-.24-4.76 1.56 1.55-4.64-.25-.4A9.44 9.44 0 0 1 5.52 15c0-5.24 4.26-9.5 9.5-9.5s9.5 4.26 9.5 9.5-4.26 9.5-9.5 9.5zm5.2-7.12c-.28-.14-1.66-.82-1.92-.91-.26-.1-.45-.14-.63.14-.19.28-.72.91-.88 1.1-.16.19-.32.21-.6.07-.28-.14-1.18-.44-2.24-1.4-.83-.74-1.39-1.66-1.55-1.94-.16-.28-.02-.43.12-.57.13-.13.28-.33.42-.5.14-.16.19-.28.28-.47.09-.19.05-.35-.02-.5-.07-.14-.63-1.53-.87-2.09-.23-.55-.46-.48-.63-.49-.16-.01-.35-.01-.54-.01-.19 0-.5.07-.76.35-.26.28-1 1-1 2.42 0 1.43 1.03 2.81 1.17 3 .14.19 2.03 3.1 4.92 4.35.69.3 1.22.48 1.64.61.69.22 1.32.19 1.81.11.55-.08 1.66-.68 1.9-1.34.23-.65.23-1.21.16-1.33-.07-.12-.26-.19-.54-.33z"/>
-  </svg>
-</a>
-
-<script src="/js/config.js"></script>
-<script src="/js/product.js"></script>
+  <script src="/js/product.js"></script>
 </body>
 </html>
