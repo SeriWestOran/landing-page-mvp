@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{PAGE_TITLE}}</title>
-  
+
   <!-- Open Graph / Meta Facebook -->
   <meta property="og:type" content="product" />
   <meta property="og:site_name" content="{{SITE_NAME}}" />
@@ -14,29 +14,30 @@
   <meta property="og:image:secure_url" content="{{OG_IMAGE}}" />
   <meta property="og:url" content="{{OG_URL}}" />
 
+  <!-- Lien vers le style CSS -->
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
   <header class="site-header">
-    <h1 class="logo">{{SITE_NAME}}</h1>
-    <a href="https://facebook.com" class="btn-facebook" id="facebook-link">Suivre sur Facebook</a>
+    <div class="header-container">
+      <h1 class="logo"><a href="/">BarakaShop</a></h1>
+    </div>
   </header>
 
   <main class="container">
     <a href="/" class="back-link">&larr; Retour au catalogue</a>
 
     <div id="product-container" class="product-detail-layout">
-      <!-- Zone Image Principale & Galerie -->
+      <!-- Media : Photo principale + Galerie -->
       <div class="product-media">
         <div class="main-image-wrapper">
           <img id="main-product-image" src="{{OG_IMAGE}}" alt="{{OG_TITLE}}">
         </div>
-        <!-- Galerie de vignettes pour les photos secondaires -->
         <div id="product-gallery" class="product-gallery"></div>
       </div>
 
-      <!-- Zone Informations Produit -->
+      <!-- Détails du produit -->
       <div class="product-info">
         <span id="product-category" class="badge"></span>
         <h1 id="product-title">{{OG_TITLE}}</h1>
