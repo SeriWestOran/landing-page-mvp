@@ -11,15 +11,20 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve les fichiers statiques (CSS, JS, Images)
+// 1. SERVIR LES FICHIERS STATIQUES (CSS, JS, IMAGES) EN PREMIER
 app.use(express.static(path.join(__dirname, "../public")));
 app.use("/images/uploads", express.static(path.join(__dirname, "../public/images/uploads")));
 
-// Routes API
+// 2. ROUTES D'API
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 
-// Route dynamique pour la page produit (Serve le HTML enrichi pour Facebook / OpenGraph)
+// 3. ROUTE EXPLICITE POUR LA PAGE ADMIN
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/admin.html"));
+});
+
+// 4. ROUTE DYNAMIQUE POUR LES FICHIERS PRODUITS (Facebook / OpenGraph)
 app.get("/produit/:id", async (req, res) => {
   try {
     const product = await db.prepare("SELECT * FROM products WHERE id = ? AND is_active = 1").get(req.params.id);
@@ -59,8 +64,8 @@ app.get("/produit/:id", async (req, res) => {
   }
 });
 
-// Redirection globale vers l'accueil pour les autres routes
-app.get("*", (req, res) => {
+// 5. PAGE D'ACCUEIL (Remplaçant du app.get("*") pour ne pas bloquer les autres fichiers)
+app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
