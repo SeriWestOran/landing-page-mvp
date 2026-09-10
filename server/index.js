@@ -31,11 +31,11 @@ app.get("/produit/:id", async (req, res) => {
   try {
     const product = await db.prepare("SELECT * FROM products WHERE id = ? AND is_active = 1").get(req.params.id);
     
-    // CORRECTION : Lecture de product.html dans le dossier racine
-    const productHtmlPath = path.join(__dirname, "../product.html");
+    // CORRECTION : Le chemin pointe vers public/product.html
+    const productHtmlPath = path.join(__dirname, "../public/product.html");
     
     if (!fs.existsSync(productHtmlPath)) {
-      return res.status(404).send("Fichier de template introuvable.");
+      return res.status(404).send("Fichier product.html introuvable dans /public.");
     }
 
     let html = fs.readFileSync(productHtmlPath, "utf8");
