@@ -14,7 +14,7 @@ const tursoClient = createClient({
 
 app.use(express.json());
 
-// 1. ROUTE D'INJECTION OPEN GRAPH (Placée AVANT express.static pour intercepter /produit/:id)
+// 1. ROUTE D'INJECTION OPEN GRAPH (Avant express.static)
 app.get(['/produit/:id', '/produit'], async (req, res) => {
   const rawId = req.params.id || req.query.id;
   const produitHtmlPath = path.join(__dirname, '../public/produit.html');
@@ -27,7 +27,9 @@ app.get(['/produit/:id', '/produit'], async (req, res) => {
         sql: 'SELECT * FROM products WHERE id = ? OR id = ?',
         args: [rawId, Number(rawId) || 0],
       });
-      product = result.rows[0];
+      if (result.rows && result.rows.length > 0) {
+        product = result.rows[0];
+      }
     }
 
     if (!fs.existsSync(produitHtmlPath)) {
@@ -38,10 +40,24 @@ app.get(['/produit/:id', '/produit'], async (req, res) => {
 
     if (product) {
       const name = String(product.name || 'Produit');
-      const desc = String(product.description || 'Découvrez cet article chez BarakaShop.').replace(/"/g, '&quot;');
-      const imageUrl = String(
-        product.image_url || 'https://barakashopaadl.onrender.com/images/placeholder-1.svg'
-      );
+      
+      // Nettoyage de la description pour les méta-balises HTML
+      const desc = String(product.description || 'Découvrez cet article chez BarakaShop.')
+        .replace(/"/g, '&quot;')
+        .replace(/[\r\n]+/g, ' ');
+
+      let imageUrl = String(product.image_url || '').trim();
+
+      // Gestion propre de l'URL d'image
+      if (!imageUrl) {
+        imageUrl = 'https://barakashopaadl.onrender.com/images/placeholder-1.svg';
+      } else if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+        // Chemin relatif
+        imageUrl = imageUrl.startsWith('/') 
+          ? `https://barakashopaadl.onrender.com${imageUrl}` 
+          : `https://barakashopaadl.onrender.com/${imageUrl}`;
+      }
+
       const fullUrl = `https://barakashopaadl.onrender.com/produit/${product.id}`;
 
       // Remplacement dynamique des balises meta Open Graph
@@ -60,7 +76,7 @@ app.get(['/produit/:id', '/produit'], async (req, res) => {
   }
 });
 
-// 2. SERVICE DES FICHIERS STATIQUES (Après les routes dynamiques)
+// 2. SERVICE DES FICHIERS STATIQUES (Placé APRES la route d'injection)
 app.use(express.static(path.join(__dirname, '../public')));
 
 // 3. API : Données JSON du produit + images secondaires
