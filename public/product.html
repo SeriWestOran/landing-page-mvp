@@ -1,71 +1,184 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{PAGE_TITLE}}</title>
-  
-  <!-- Open Graph Dynamique -->
-  <meta property="og:type" content="product" />
-  <meta property="og:title" content="{{OG_TITLE}}" />
-  <meta property="og:description" content="{{OG_DESCRIPTION}}" />
-  <meta property="og:image" content="{{OG_IMAGE}}" />
-  <meta property="og:url" content="{{OG_URL}}" />
-  <meta property="og:site_name" content="{{SITE_NAME}}" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fiche Produit</title>
 
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Balises Open Graph pour le partage Facebook / réseaux sociaux -->
+  <meta property="og:type" content="product" />
+  <meta property="og:title" id="og-title" content="Produit" />
+  <meta property="og:description" id="og-description" content="Découvrez ce produit sur notre boutique." />
+  <meta property="og:image" id="og-image" content="/images/placeholder-1.svg" />
+  <meta property="og:url" id="og-url" content="" />
+
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-content">
-      <a href="/" class="logo">BarakaShop <span>محل البركة</span></a>
-      <a id="fb-header-link" href="https://facebook.com" target="_blank" class="btn btn-fb" rel="noopener">
-        <i class="fab fa-facebook"></i> Suivre sur Facebook
+  <header class="header">
+    <div class="container header-content">
+      <a href="/" class="logo-link">
+        <h1 id="site-title">BarakaShop</h1>
       </a>
+      <a href="/" class="btn btn-secondary">← Retour à l'accueil</a>
     </div>
   </header>
 
-  <main class="product-page wrap" id="product-container">
-    <a class="breadcrumb" href="/">&larr; Retour au catalogue</a>
-    
-    <div class="product-detail">
+  <main class="container product-detail-container">
+    <div id="loading" class="loading-state">Chargement du produit...</div>
+    <div id="error-message" class="error-state" style="display: none;">Produit introuvable.</div>
+
+    <div id="product-content" class="product-detail-layout" style="display: none;">
       <div class="product-media">
-        <div class="image">
-          <img id="main-product-image" src="/images/placeholder-1.svg" alt="Image du produit">
+        <div class="main-image-wrapper">
+          <img id="main-product-image" src="/images/placeholder-1.svg" alt="Produit" />
         </div>
-        <div class="product-gallery" id="product-gallery">
-          <!-- Vignettes générées dynamiquement -->
-        </div>
+        <div id="product-gallery" class="product-gallery"></div>
       </div>
 
-      <div class="info">
-        <span class="category-badge" id="product-category">Catalogue</span>
-        <h1 id="product-title">Chargement du produit...</h1>
-        <p class="price" id="product-price">-- DZD</p>
+      <div class="product-info">
+        <span id="product-category" class="category-badge"></span>
+        <h1 id="product-title"></h1>
+        <div id="product-price" class="price-tag"></div>
+        <div id="stock-status"></div>
+        <p id="product-description" class="description-text"></p>
 
-        <div class="description-box">
-          <h3>Description du produit</h3>
-          <div class="desc" id="product-description">Veuillez patienter...</div>
-        </div>
-
-        <div class="actions">
-          <a id="btn-whatsapp" href="#" target="_blank" rel="noopener" class="btn btn-primary">
-            <i class="fab fa-whatsapp"></i> Commander sur WhatsApp
+        <div class="action-box">
+          <a id="wa-order-btn" class="btn btn-primary btn-lg" href="#" target="_blank" rel="noopener">
+            Commander via WhatsApp
           </a>
         </div>
       </div>
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <span id="footer-contact">Une question ? Écrivez-nous sur Facebook.</span>
-      <a id="fb-footer-link" href="#" target="_blank" rel="noopener">facebook.com</a>
+  <footer class="footer">
+    <div class="container">
+      <p id="contact-text"></p>
     </div>
   </footer>
 
   <script src="/js/config.js"></script>
-  <script src="/js/product.js"></script>
+  <script>
+    (function() {
+      const cfg = window.SITE_CONFIG || {};
+
+      function money(amount, currency) {
+        if (!amount && amount !== 0) return "";
+        const num = Number(amount);
+        if (Number.isNaN(num)) return `${amount} ${currency || "DZD"}`;
+        return `${num.toLocaleString("fr-FR")} ${currency || "DZD"}`;
+      }
+
+      async function fetchProduct() {
+        const pathParts = window.location.pathname.split('/');
+        const id = pathParts[pathParts.length - 1];
+
+        if (!id) {
+          showError();
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/products/${id}`);
+          if (!res.ok) {
+            showError();
+            return;
+          }
+          const product = await res.json();
+          renderProduct(product);
+        } catch (err) {
+          console.error(err);
+          showError();
+        }
+      }
+
+      function showError() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error-message').style.display = 'block';
+      }
+
+      function renderProduct(product) {
+        document.title = `${product.name} - ${cfg.storeName || 'Boutique'}`;
+
+        document.getElementById('og-title').setAttribute('content', product.name);
+        document.getElementById('og-description').setAttribute('content', product.description || '');
+        document.getElementById('og-image').setAttribute('content', window.location.origin + (product.image_url || '/images/placeholder-1.svg'));
+        document.getElementById('og-url').setAttribute('content', window.location.href);
+
+        document.getElementById('product-title').textContent = product.name;
+        document.getElementById('product-price').textContent = money(product.price, product.currency || 'DZD');
+        document.getElementById('product-description').textContent = product.description || '';
+        document.getElementById('product-category').textContent = product.category || 'Général';
+
+        const stockEl = document.getElementById('stock-status');
+        if (!product.in_stock) {
+          stockEl.innerHTML = '<span class="badge out-of-stock">Rupture de stock</span>';
+        } else {
+          stockEl.innerHTML = '<span class="badge in-stock">En stock</span>';
+        }
+
+        const mainImg = document.getElementById('main-product-image');
+        const mainUrl = product.image_url || '/images/placeholder-1.svg';
+        mainImg.src = mainUrl;
+        mainImg.alt = product.name;
+        mainImg.onerror = function() {
+          this.onerror = null;
+          this.src = '/images/placeholder-1.svg';
+        };
+
+        const galleryContainer = document.getElementById('product-gallery');
+        galleryContainer.innerHTML = '';
+
+        let galleryImages = [];
+        if (Array.isArray(product.gallery_urls)) {
+          galleryImages = product.gallery_urls;
+        } else if (typeof product.gallery_urls === 'string') {
+          try {
+            galleryImages = JSON.parse(product.gallery_urls);
+          } catch(e) {
+            galleryImages = [];
+          }
+        }
+
+        const allImages = [mainUrl, ...galleryImages];
+
+        if (allImages.length > 1) {
+          allImages.forEach((url, idx) => {
+            const thumb = document.createElement('img');
+            thumb.src = url;
+            thumb.alt = `${product.name} - Vue ${idx + 1}`;
+            thumb.className = idx === 0 ? 'gallery-thumb active' : 'gallery-thumb';
+            thumb.onerror = function() {
+              this.onerror = null;
+              this.src = '/images/placeholder-1.svg';
+            };
+            thumb.addEventListener('click', () => {
+              mainImg.src = url;
+              document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+              thumb.classList.add('active');
+            });
+            galleryContainer.appendChild(thumb);
+          });
+        }
+
+        const waBtn = document.getElementById('wa-order-btn');
+        if (!product.in_stock) {
+          waBtn.classList.add('disabled');
+          waBtn.removeAttribute('href');
+          waBtn.textContent = 'Indisponible';
+        } else {
+          const phone = (cfg.whatsappNumber || '').replace(/[^0-9]/g, '');
+          const text = encodeURIComponent(`Bonjour, je souhaite commander : ${product.name} (${money(product.price, product.currency)})`);
+          waBtn.href = `https://wa.me/${phone}?text=${text}`;
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('product-content').style.display = 'grid';
+      }
+
+      document.addEventListener('DOMContentLoaded', fetchProduct);
+    })();
+  </script>
 </body>
 </html>
